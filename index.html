@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vintage Calculator - Simulator 1</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: monospace;
+        }
+
+        .calculator {
+            background-color: #e0d8c8; /* Bege vintage */
+            border: 5px solid #a08c70;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            width: 400px;
+        }
+
+        .paper-roll {
+            background-color: #fffdf5; /* Papel antigo */
+            border: 2px solid #ccc;
+            height: 150px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre;
+            text-align: right;
+        }
+
+        .display {
+            background-color: #a0c8d0; /* Azul fluorescente simulada */
+            color: #000;
+            font-size: 24px;
+            text-align: right;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #888;
+            border-radius: 5px;
+        }
+
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+
+        button {
+            background-color: #c0b0a0;
+            border: 2px solid #a08c70;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #b0a090;
+        }
+
+        button:active {
+            background-color: #a09080;
+        }
+
+        
+        .switch {
+            grid-column: span 5;
+            margin-bottom: 10px;
+        }
+
+        /* Vintage filter */
+        .calculator {
+            filter: sepia(0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+		<label>Calculadora Vintage - Simulator 1</label>
+	
+        <div class="paper-roll" id="paper"></div>
+        <div class="display" id="display">0</div>
+        <div class="switch">
+            <label>Print mode: </label>
+            <select id="printMode">
+                <option value="print">Print</option>
+                <option value="non-print">Non-Print</option>
+            </select>
+            <label>Decimals: </label>
+            <select id="decimalPlaces">
+                <option value="2">2</option>
+                <option value="f">F</option>
+            </select>
+            <label>Rounding: </label>
+            <select id="rounding">
+                <option value="5/4">5/4</option>
+                <option value="up">↑</option>
+                <option value="down">↓</option>
+            </select>
+        </div>
+        <div class="keys">
+            
+            <button onclick="handleButton('cost')">COST</button>
+            <button onclick="handleButton('sell')">SELL</button>
+            <button onclick="handleButton('margin')">MARGIN</button>
+            <button onclick="handleButton('change')">CHANGE</button>
+            <button onclick="handleButton('avg')">AVG</button>
+
+            
+            <button onclick="handleButton('tax+')">TAX+</button>
+            <button onclick="handleButton('tax-')">TAX-</button>
+            <button onclick="handleButton('gt')">GT</button>
+            <button onclick="handleButton('%')">%</button>
+            <button onclick="handleButton('+/-')">+/–</button>
+
+            
+            <button onclick="handleButton('7')">7</button>
+            <button onclick="handleButton('8')">8</button>
+            <button onclick="handleButton('9')">9</button>
+            <button onclick="handleButton('/')">÷</button>
+            <button onclick="handleButton('mc')">MC</button>
+
+            
+            <button onclick="handleButton('4')">4</button>
+            <button onclick="handleButton('5')">5</button>
+            <button onclick="handleButton('6')">6</button>
+            <button onclick="handleButton('*')">×</button>
+            <button onclick="handleButton('mr')">MR</button>
+
+            
+            <button onclick="handleButton('1')">1</button>
+            <button onclick="handleButton('2')">2</button>
+            <button onclick="handleButton('3')">3</button>
+            <button onclick="handleButton('-')">–</button>
+            <button onclick="handleButton('m-')">M–</button>
+
+            
+            <button onclick="handleButton('0')">0</button>
+            <button onclick="handleButton('00')">00</button>
+            <button onclick="handleButton('.')">.</button>
+            <button onclick="handleButton('+')">+</button>
+            <button onclick="handleButton('m+')">M+</button>
+
+            
+            <button onclick="handleButton('ce')">CE</button>
+            <button onclick="handleButton('c')">C</button>
+            <button onclick="handleButton('back')">←</button>
+            <button onclick="handleButton('=')">=</button>
+            <button onclick="handleButton('total')">*</button>
+
+            
+            <button onclick="handleButton('subtotal')">◊</button>
+            <button onclick="handleButton('nonadd')">#</button>
+            <button onclick="handleButton('paperfeed')">↑</button>
+        </div>
+		
+		<label>If this was helpful to you, please consider sponsoring me through PayPal: </label>
+		<form action="https://www.paypal.com/donate" method="post" target="_top">
+		<input type="hidden" name="hosted_button_id" value="653CQGJJHXJ9W" />
+		<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+		<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1" />
+		</form>
+
+    </div>
+
+    <script>
+        let displayValue = '0';
+        let pendingValue = null;
+        let pendingOperator = '';
+        let memory = 0;
+        let grandTotal = 0;
+        let itemCount = 0;
+        let taxRate = 5; // Taxa de imposto padrão em %
+        let history = []; // Para média
+
+        const display = document.getElementById('display');
+        const paper = document.getElementById('paper');
+        const printModeSelect = document.getElementById('printMode');
+        const decimalPlacesSelect = document.getElementById('decimalPlaces');
+        const roundingSelect = document.getElementById('rounding');
+
+        function updateDisplay() {
+            display.textContent = displayValue;
+        }
+
+        function printToPaper(text) {
+            if (printModeSelect.value === 'print') {
+                paper.innerHTML += text + '\n';
+                paper.scrollTop = paper.scrollHeight;
+            }
+        }
+
+        function applyRounding(value) {
+            let decimals = decimalPlacesSelect.value === 'f' ? 10 : parseInt(decimalPlacesSelect.value);
+            let factor = Math.pow(10, decimals);
+            let rounded;
+            switch (roundingSelect.value) {
+                case 'up':
+                    rounded = Math.ceil(value * factor) / factor;
+                    break;
+                case 'down':
+                    rounded = Math.floor(value * factor) / factor;
+                    break;
+                default: // 5/4
+                    rounded = Math.round(value * factor) / factor;
+                    break;
+            }
+            return rounded.toFixed(decimals);
+        }
+
+        function handleNumber(num) {
+            if (displayValue === '0') {
+                displayValue = num;
+            } else {
+                displayValue += num;
+            }
+            updateDisplay();
+        }
+
+        function handleOperator(op) {
+            let current = parseFloat(displayValue);
+            if (pendingOperator && pendingValue !== null) {
+                current = calculate(pendingValue, current, pendingOperator);
+                printToPaper(`${pendingValue} ${pendingOperator} ${displayValue} = ${current}`);
+                displayValue = applyRounding(current);
+                updateDisplay();
+            }
+            pendingValue = current;
+            pendingOperator = op;
+            displayValue = '0';
+            printToPaper(`${pendingValue} ${op}`);
+            itemCount++;
+        }
+
+        function calculate(a, b, op) {
+            switch (op) {
+                case '+': return a + b;
+                case '-': return a - b;
+                case '*': return a * b;
+                case '/': return a / b;
+                default: return b;
+            }
+        }
+
+        function handleButton(value) {
+            if (!isNaN(value) || value === '.') {
+                handleNumber(value);
+            } else if (['+', '-', '*', '/'].includes(value)) {
+                handleOperator(value);
+            } else if (value === '=') {
+                if (pendingOperator && pendingValue !== null) {
+                    let result = calculate(pendingValue, parseFloat(displayValue), pendingOperator);
+                    printToPaper(`${pendingValue} ${pendingOperator} ${displayValue} = ${applyRounding(result)}`);
+                    displayValue = applyRounding(result);
+                    updateDisplay();
+                    grandTotal += result;
+                    history.push(result);
+                    pendingValue = null;
+                    pendingOperator = '';
+                }
+            } else if (value === 'total') { // *
+                if (pendingOperator && pendingValue !== null) {
+                    let result = calculate(pendingValue, parseFloat(displayValue), pendingOperator);
+                    printToPaper(`${pendingValue} ${pendingOperator} ${displayValue} * ${applyRounding(result)}`);
+                    displayValue = applyRounding(result);
+                    updateDisplay();
+                    grandTotal += result;
+                    pendingValue = null;
+                    pendingOperator = '';
+                }
+            } else if (value === 'ce') {
+                displayValue = '0';
+                updateDisplay();
+            } else if (value === 'c') {
+                displayValue = '0';
+                pendingValue = null;
+                pendingOperator = '';
+                itemCount = 0;
+                history = [];
+                updateDisplay();
+                paper.innerHTML = '';
+            } else if (value === 'back') {
+                displayValue = displayValue.slice(0, -1) || '0';
+                updateDisplay();
+            } else if (value === '+/-') {
+                displayValue = (parseFloat(displayValue) * -1).toString();
+                updateDisplay();
+            } else if (value === '%') {
+                if (pendingValue !== null) {
+                    let result = pendingValue * (parseFloat(displayValue) / 100);
+                    displayValue = applyRounding(result);
+                    updateDisplay();
+                    printToPaper(`${pendingValue} % ${displayValue}`);
+                }
+            } else if (value === 'm+') {
+                memory += parseFloat(displayValue);
+                printToPaper(`M+ ${displayValue}`);
+            } else if (value === 'm-') {
+                memory -= parseFloat(displayValue);
+                printToPaper(`M- ${displayValue}`);
+            } else if (value === 'mr') {
+                displayValue = memory.toString();
+                updateDisplay();
+            } else if (value === 'mc') {
+                memory = 0;
+            } else if (value === 'tax+') {
+                let result = parseFloat(displayValue) * (1 + taxRate / 100);
+                displayValue = applyRounding(result);
+                updateDisplay();
+                printToPaper(`TAX+ ${displayValue}`);
+            } else if (value === 'tax-') {
+                let result = parseFloat(displayValue) / (1 + taxRate / 100);
+                displayValue = applyRounding(result);
+                updateDisplay();
+                printToPaper(`TAX- ${displayValue}`);
+            } else if (value === 'gt') {
+                displayValue = grandTotal.toString();
+                updateDisplay();
+                printToPaper(`GT ${grandTotal}`);
+            } else if (value === 'avg') {
+                if (history.length > 0) {
+                    let sum = history.reduce((a, b) => a + b, 0);
+                    let avg = sum / history.length;
+                    displayValue = applyRounding(avg);
+                    updateDisplay();
+                    printToPaper(`AVG ${displayValue}`);
+                }
+            } else if (value === 'cost') {
+                // 
+                // 
+                printToPaper(`COST ${displayValue}`);
+            } else if (value === 'sell') {
+                printToPaper(`SELL ${displayValue}`);
+            } else if (value === 'margin') {
+                printToPaper(`MARGIN ${displayValue}`);
+            } else if (value === 'change') {
+                // 
+                let price = parseFloat(displayValue);
+                let paid = prompt('Digite o valor pago:');
+                if (paid) {
+                    let change = paid - price;
+                    printToPaper(`PRICE ${price} PAID ${paid} CG ${change}`);
+                    displayValue = change.toString();
+                    updateDisplay();
+                }
+            } else if (value === 'paperfeed') {
+                printToPaper(' ');
+            } else if (value === 'subtotal') {
+                if (pendingOperator && pendingValue !== null) {
+                    let result = calculate(pendingValue, parseFloat(displayValue), pendingOperator);
+                    printToPaper(`◊ ${applyRounding(result)}`);
+                }
+            } else if (value === 'nonadd') {
+                printToPaper(`# ${displayValue}`);
+            } else if (value === '00') {
+                handleNumber('00');
+            }
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
